@@ -1,0 +1,9 @@
+icsp_host: "<icsp ip address>"
+icsp_username: "<icsp user>"
+icsp_password: "<icsp password>"
+server_username: "<io user>"
+server_password: "<ilo password>"
+ov_osbp: 'ProLiant OS - ESXi 6.0 U3 Test ansible'
+osbp_custom_attributes:
+  - SSH_CERT: "{{ lookup('file', '~/.ssh/root_ansible.pub') }}"
+

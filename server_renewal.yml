@@ -1,0 +1,115 @@
+###
+---
+- hosts: all
+  vars:
+    config: "{{ playbook_dir }}/oneview_config.json"
+    group_var_file: "{{ playbook_dir }}/group_vars/all"
+    server_hardware_name: "OA-C7K-ONEVIEWTST, bay 1"
+    ov_template: "test_ansible_template_bl420g8"
+    server_profile_name: "test_ansible_profile_bl420g8"
+  vars_files:
+    - "{{ playbook_dir }}/group_vars/resources"
+    - "{{ playbook_dir }}/vars/icsp_cred.yml"
+    - "{{ playbook_dir }}/vars/spt_bl420g8.yml"
+    - "{{ playbook_dir }}/vars/network_config.yml"
+  tasks:
+
+    - name: Power Off the server hardware
+      oneview_server_hardware:
+        config: "{{ config }}"
+        state: power_state_set
+        data:
+            name : '{{ server_hardware_name }}'
+            powerStateData:
+                powerState: "Off"
+                powerControl: "PressAndHold"
+      tags: power
+      delegate_to: localhost
+
+    - name: Ensure the server is removed from ICsp
+      hpe_icsp_server:
+        icsp_host: "{{icsp_host}}"
+        username: "{{icsp_username}}"
+        password: "{{icsp_password}}"
+        server_ipAddress: "{{server_hardware.mpHostInfo.mpIpAddresses[0].address}}"
+        server_username: "{{ server_username }}"
+        server_password: "{{ server_password }}"
+        state: absent
+      delegate_to: localhost
+
+    - name: Delete the Server Profile
+      oneview_server_profile:
+        config: "{{ config }}"
+        state: "absent"
+        data:
+          name: "{{ server_profile_name }}"
+      delegate_to: localhost
+
+    - name: Delete the Server Profile Template
+      oneview_server_profile_template:
+        config: "{{ config }}"
+        state: absent
+        data:
+          name: "{{ ov_template }}"
+      delegate_to: localhost
+
+    - name: Create a server profile template
+      oneview_server_profile_template:
+        config: "{{ config }}"
+        state: present
+        data:
+          "{{ item.value }}"
+      with_dict: '{{ server_profile_template }}'
+      tags: oneview
+      delegate_to: localhost
+
+    - name : Create Server Profile from a Server Profile Template
+      oneview_server_profile:
+         config: "{{ config }}"
+         data:
+           server_template: '{{ ov_template }}'
+           server_hardware: '{{server_hardware_name}}'
+           name: '{{ server_profile_name }}'
+      tags: oneview
+      delegate_to: localhost
+
+    - name: Ensure the server is registered in ICsp
+      hpe_icsp_server:
+        icsp_host: "{{ icsp_host }}"
+        username: "{{ icsp_username }}"
+        password: "{{ icsp_password }}"
+        server_ipAddress: "{{ server_hardware.mpHostInfo.mpIpAddresses[0].address }}"  #iLO IP Address from server hardware
+        server_username: "{{ server_username }}"
+        server_password: "{{ server_password }}"
+        state: present
+      tags: insight
+      delegate_to: localhost
+
+    - debug: msg="{{ server_profile.serialNumber }}"
+
+    - name: Set the network configuration
+      hpe_icsp_server:
+        icsp_host: "{{ icsp_host }}"
+        username: "{{ icsp_username }}"
+        password: "{{ icsp_password }}"
+        server_ipAddress: "{{ server_hardware.mpHostInfo.mpIpAddresses[0].address }}"  #iLO IP Address from server hardware
+        server_username: "{{ server_username }}"
+        server_password: "{{ server_password }}"
+        server_personality_data: "{{ network_config }}"
+        state: network_configured
+      tags: insight
+      delegate_to: localhost
+
+    - name: Deploy OS to the server
+      hpe_icsp_os_deployment:
+        icsp_host: "{{ icsp_host }}"
+        username: "{{ icsp_username }}"
+        password: "{{ icsp_password }}"
+        server_id: "{{ server_profile.serialNumber }}"
+        os_build_plan: "{{ ov_osbp }}"
+        custom_attributes: "{{ osbp_custom_attributes }}"
+      tags: insight
+      delegate_to: localhost
+
+    - debug: var="{{ server_profile.serialNumber }}"
+      tags: insight

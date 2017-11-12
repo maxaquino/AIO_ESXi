@@ -1,0 +1,8 @@
+{
+  "ip": "<ip address>",
+  "credentials": {
+    "userName": "<user>",
+    "password": "<password>"
+  },
+  "api_version": 300
+}

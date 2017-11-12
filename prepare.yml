@@ -1,0 +1,4 @@
+---
+# file: prepare.yml
+- include: get_all_info.yml
+- include: server_renewal.yml

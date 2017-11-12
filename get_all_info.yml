@@ -1,0 +1,80 @@
+###
+---
+- hosts: localhost
+  vars:
+    config: "{{ playbook_dir }}/oneview_config.json"
+    group_var_file: "{{ playbook_dir }}/group_vars/all"
+    header: "### Get enclosure and devices information"
+    group_res_file: "{{ playbook_dir }}/group_vars/resources"
+
+  tasks:
+    - name: remove the group_ress/all file before re-populating it
+      file: path="{{group_res_file}}" state=absent
+
+    # Add an header
+    - lineinfile:
+        dest: "{{group_res_file}}"
+        create: yes
+        line: "{{ header }}"
+
+    # Get all networks
+    - script: get_ethernet_networks.sh
+      delegate_to: localhost
+
+      register: en
+
+    - lineinfile:
+        dest: "{{group_res_file}}"
+        create: yes
+        line: "{{en.stdout}}"
+        insertafter: EOF
+
+    # Get all enclosures
+    - script: get_enclosures.sh
+      delegate_to: localhost
+
+      register: enc
+
+    - lineinfile:
+        dest: "{{group_res_file}}"
+        create: yes
+        line: "{{enc.stdout}}"
+        insertafter: EOF
+
+    # Get all enclosure groups
+    - script: get_eg.sh
+      delegate_to: localhost
+
+      register: eg
+
+    - lineinfile:
+        dest: "{{group_res_file}}"
+        create: yes
+        line: "{{eg.stdout}}"
+        insertafter: EOF
+
+    # Get all server hardware types
+    - script: get_sht.sh
+      delegate_to: localhost
+
+      register: sht
+
+    # Write variables in the global file
+    - lineinfile:
+        dest: "{{group_res_file}}"
+        create: yes
+        line: "{{sht.stdout}}"
+        insertafter: EOF
+
+    # Get all server hardware
+    - script: get_sh.sh
+      delegate_to: localhost
+
+      register: sh
+
+    # Write variables in the global file
+    - lineinfile:
+        dest: "{{group_res_file}}"
+        create: yes
+        line: "{{sh.stdout}}"
+        insertafter: EOF

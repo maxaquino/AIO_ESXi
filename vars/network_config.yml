@@ -1,0 +1,26 @@
+# Network Settings
+samplehost: "<hostname>"
+static_net: "<ip address/netmask>"
+domain_name: "<domain>"
+gateway: <gateway>
+dns_server1: "<dns_server1>"
+dns_server2: "<dns_server2>"
+
+network_config:
+  hostname: "{{ samplehost }}"
+  domain: "{{domain_name}}"
+  interfaces:
+  - macAddress: "{{ server_profile.connections[0].mac }}"
+    enabled: true
+    dhcpv4: false
+    ipv6Autoconfig:
+    vlanid: -1
+    dnsServers:
+    - "{{ dns_server1 }}"
+    - "{{ dns_server2 }}"
+    staticNetworks:
+    - "{{ static_net }}"
+    ipv4gateway: "{{ gateway }}"
+    ipv6gateway:
+  virtualInterfaces:
+
