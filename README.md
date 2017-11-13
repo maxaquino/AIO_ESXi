@@ -15,7 +15,7 @@ To run the ansible modules provided you should execute the following steps:
 Run:
 
 ```bash
-$ git clone https://github.com/maxaquino/AIO_ESX
+$ git clone https://github.com/maxaquino/AIO_ESXi
 ```
 
 ### 2. Create the configuration files:
